@@ -1,0 +1,173 @@
+const API = {
+  me: '/api/me', login: '/api/auth/login', signup: '/api/auth/signup', logout: '/api/auth/logout',
+  pricing: '/api/pricing', groups: '/api/client/groups', launch: '/api/client/launch',
+  clientAction: '/api/client/group-action', glory: '/api/client/glory-progression',
+  activity: '/api/client/activity-log', transactions: '/api/transactions', buy: '/api/buyCredits',
+  cancelTx: '/api/transaction/cancel', couponsMine: '/api/coupons/mine',
+  couponsRedeemed: '/api/coupons/redeemed', couponRedeem: '/api/coupons/redeem',
+  inbox: '/api/inbox/messages', changePw: '/api/auth/change-password',
+  admin: {
+    overview: '/api/admin/overview', users: '/api/admin/users',
+    userCreate: '/api/admin/user/create', userCredits: '/api/admin/user/credits',
+    userRole: '/api/admin/user/role', userDelete: '/api/admin/user/delete',
+    coupons: '/api/admin/coupons', couponCreate: '/api/admin/coupon/create',
+    couponRevoke: '/api/admin/coupon/revoke', bots: '/api/admin/bot-accounts',
+    joinClan: '/api/admin/join-clan', settings: '/api/admin/settings'
+  }
+};
+
+let creditPrices = { basic: 1.7, premium: 20 };
+let regionPricing = {};
+
+async function api(url, method = 'GET', body) {
+  const opt = { method, headers: {} };
+  if (body) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+  let r;
+  try { r = await fetch(url, opt); }
+  catch (e) { toast('নেটওয়ার্ক সমস্যা', 'error'); return {}; }
+  let d = {};
+  try { d = await r.json(); } catch (e) { d = {}; }
+  if (r.status === 401) { location.href = '/login'; return {}; }
+  if (!r.ok && !d.error) d.error = 'HTTP ' + r.status;
+  return d;
+}
+
+async function requireAuth(adminOnly) {
+  const me = await api(API.me);
+  if (!me.username) { location.href = '/login'; return new Promise(() => {}); }
+  if (adminOnly && me.role !== 'admin') { location.href = '/client'; return new Promise(() => {}); }
+  return me;
+}
+
+function setCredits(me) {
+  const b = document.getElementById('credits-basic');
+  const p = document.getElementById('credits-premium');
+  if (b) b.textContent = me.basic_credits ?? 0;
+  if (p) p.textContent = me.premium_credits ?? 0;
+}
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function formatNumber(n) {
+  n = Number(n) || 0;
+  return n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'K' : String(n);
+}
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+function showToast(m, t) { toast(m, t); }
+async function logout() { await api(API.logout, 'POST'); location.href = '/login'; }
+
+function populateRegionSelect(regions) {
+  const sel = document.getElementById('region-select');
+  if (!sel) return;
+  sel.innerHTML = (regions || []).filter(r => r.enabled !== false)
+    .map(r => `<option value="${escapeHtml(r.id)}">${escapeHtml(r.region_name)} (${escapeHtml(r.code)})</option>`).join('');
+  if (sel.value) updateRegionPrice();
+}
+
+async function launchGroup() {
+  const region = document.getElementById('region-select')?.value;
+  const clan_id = document.getElementById('clan-id')?.value.trim();
+  if (!clan_id) return toast('ক্ল্যান আইডি দাও', 'error');
+  const btn = document.getElementById('launch-btn');
+  if (btn) btn.disabled = true;
+  const d = await api(API.launch, 'POST', { region, clan_id });
+  if (btn) btn.disabled = false;
+  if (d.error) return toast(d.error, 'error');
+  toast('গ্রুপ চালু হয়েছে', 'success');
+  setCredits(await api(API.me));
+  loadMyGroups();
+}
+
+async function loadMyGroups() {
+  const groups = await api(API.groups);
+  renderGroups(Array.isArray(groups) ? groups : []);
+}
+
+async function loadActivity() {
+  const logs = await api(API.activity);
+  const el = document.getElementById('activity');
+  if (el) el.innerHTML = (logs || []).map(l =>
+    `<div>[${escapeHtml((l.timestamp || '').slice(11, 19))}] ${escapeHtml(l.action)} · ${escapeHtml(l.details || '')}</div>`).join('') || '<div class="muted">খালি</div>';
+}
+
+function showGloryProgression(gid) {
+  const m = document.getElementById('glory-modal');
+  if (m) m.classList.remove('hidden');
+  api(API.glory + '?group_id=' + encodeURIComponent(gid)).then(d => {
+    const body = document.getElementById('glory-body');
+    if (!body) return;
+    body.innerHTML = `<div>Total glory: <b>${formatNumber(d.final_glory?.total_glory || 0)}</b></div>
+      <div>Farmed: <b>${formatNumber(d.glory_farmed || 0)}</b></div>
+      <div>Clan: ${escapeHtml(d.clan_data?.clan_name || '')}</div>`;
+  });
+}
+
+function openRefundModal(gid) {
+  if (confirm('রিফান্ড করলে ১ ক্রেডিট ফেরত যাবে। নিশ্চিত?')) groupAction(gid, 'refund');
+}
+
+async function redeemCoupon() {
+  const code = document.getElementById('redeem-code')?.value.trim().toUpperCase();
+  if (!code) return;
+  const d = await api(API.couponRedeem, 'POST', { code });
+  if (d.error) return toast(d.error, 'error');
+  toast('রিডিম সফল', 'success');
+  setCredits(await api(API.me));
+  loadCoupons();
+}
+
+async function loadCoupons() {
+  const mine = await api(API.couponsMine);
+  const el = document.getElementById('coupons-mine');
+  if (el) el.innerHTML = (mine || []).map(c =>
+    `<div class="row-item"><code>${escapeHtml(c.code)}</code><span class="badge">${escapeHtml(c.status)}</span></div>`).join('') || '<p class="muted small">খালি</p>';
+  const used = await api(API.couponsRedeemed);
+  const el2 = document.getElementById('coupons-used');
+  if (el2) el2.innerHTML = (used || []).map(c => `<div class="row-item"><code>${escapeHtml(c.code)}</code></div>`).join('') || '<p class="muted small">খালি</p>';
+}
+
+async function buyCredits() {
+  const d = await api(API.buy, 'POST', {
+    basic_credits: +document.getElementById('buy-basic').value || 0,
+    premium_credits: +document.getElementById('buy-premium').value || 0,
+    order_id: document.getElementById('buy-order').value.trim()
+  });
+  if (d.error) return toast(d.error, 'error');
+  toast('অর্ডার ' + d.transaction_id, 'success');
+  loadTx();
+}
+
+async function loadTx() {
+  const txs = await api(API.transactions);
+  const el = document.getElementById('txs');
+  if (!el) return;
+  el.innerHTML = (txs || []).map(t => `
+    <div class="row-item"><div><b>${escapeHtml(t.id)}</b>
+      <div class="small muted">🔵 ${t.basic_credits} · ⭐ ${t.premium_credits} · $${t.amount} · ${escapeHtml(t.status)}</div></div>
+      ${t.status === 'pending' ? `<button class="btn btn-ghost sm" onclick="cancelTx('${t.id}')">বাতিল</button>` : ''}
+    </div>`).join('') || '<p class="muted small">খালি</p>';
+}
+async function cancelTx(id) { await api(API.cancelTx, 'POST', { transaction_id: id }); loadTx(); }
+
+async function loadInbox() {
+  const msgs = await api(API.inbox);
+  const el = document.getElementById('inbox');
+  if (!el) return;
+  el.innerHTML = (msgs || []).map(m =>
+    `<div class="row-item"><div><b>${escapeHtml(m.title || '')}</b><div class="small muted">${escapeHtml(m.body || '')}</div></div></div>`).join('') || '<p class="muted small">খালি</p>';
+}
+
+async function changePw() {
+  const d = await api(API.changePw, 'POST', {
+    current_password: document.getElementById('cur-pw').value,
+    new_password: document.getElementById('new-pw').value
+  });
+  d.error ? toast(d.error, 'error') : toast('পাসওয়ার্ড আপডেট', 'success');
+}

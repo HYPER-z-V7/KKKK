@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: rihanx-glory
+    runtime: python
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt && python3 rihanx_patch.py && python3 rihanx_speed_patch.py
+    startCommand: python3 app.py
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: MAX_CONCURRENT_MATCHES
+        value: "4"
+      - key: LOGIN_CONCURRENCY
+        value: "6"

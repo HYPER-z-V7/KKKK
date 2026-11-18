@@ -1,0 +1,26 @@
+# RIHAN X — Guild Glory Engine
+
+Free Fire গিল্ড গ্লোরি অটোমেশন: CS ম্যাচ (Duo 410) + অ্যান্টি-AFK + মুভমেন্ট +
+অটো ক্ল্যান জয়েন + অটো ক্রিয়েট + অটো ম্যাচ প্লে + সুপারভাইজার। প্যানেল DB,
+ফ্রেন্ড/চ্যাট কানেকশন সহ।
+
+## রুট
+
+| রুট | কী |
+|---|---|
+| `/` | ল্যান্ডিং |
+| `/login` | লগইন / সাইনআপ |
+| `/client` | ক্লায়েন্ট প্যানেল |
+| `/admin` | অ্যাডমিন প্যানেল |
+| `/bot` | বট ড্যাশবোর্ড |
+| `/healthz` | হেলথচেক |
+
+সিড অ্যাডমিন: `rihanx` / `RihanX@999` — প্রথম লগইনেই বদলাও।
+
+## লোকাল
+
+```bash
+pip install -r requirements.txt
+python3 rihanx_patch.py
+python3 rihanx_speed_patch.py
+python3 app.py

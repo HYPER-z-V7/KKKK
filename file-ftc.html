@@ -1,0 +1,78 @@
+
+<header class="topbar">
+  <a class="brand" href="/"><img src="/logo.gif" alt=""><span>RIHAN<b>X</b> ADMIN</span></a>
+  <div class="hdr-right">
+    <span class="pill" id="who">…</span>
+    <a class="btn btn-ghost sm" href="/bot">বট ড্যাশবোর্ড</a>
+    <button class="btn btn-ghost sm">লগআউট</button>
+  </div>
+</header>
+
+<nav class="tabs tabs-bar">
+  <button class="tab active" data-view="over">ওভারভিউ</button>
+  <button class="tab" data-view="users">ইউজার</button>
+  <button class="tab" data-view="coupons">কুপন</button>
+  <button class="tab" data-view="bots">বট</button>
+  <button class="tab" data-view="clan">ক্ল্যান</button>
+  <button class="tab" data-view="cfg">সেটিংস</button>
+  <button class="tab" data-view="logs">লগ</button>
+</nav>
+
+<main class="page">
+  <section id="view-over" class="view"><div class="ng-card"><h2>ওভারভিউ</h2><div id="over" class="stat-grid"></div></div></section>
+
+  <section id="view-users" class="view hidden">
+    <div class="ng-card">
+      <h2>ইউজার তৈরি</h2>
+      <div class="row">
+        <label>ইউজারনেম<input id="nu-name"></label>
+        <label>পাসওয়ার্ড<input id="nu-pw"></label>
+        <label>রোল<select id="nu-role"><option>user</option><option>admin</option></select></label>
+        <label>Basic<input id="nu-basic" type="number" value="0"></label>
+        <label>Premium<input id="nu-premium" type="number" value="0"></label>
+      </div>
+      <button class="btn btn-gold">তৈরি</button>
+    </div>
+    <div class="ng-card"><h2>ইউজার লিস্ট</h2><div id="users"></div></div>
+  </section>
+
+  <section id="view-coupons" class="view hidden">
+    <div class="ng-card">
+      <h2>কুপন জেনারেট</h2>
+      <div class="row">
+        <label>Basic<input id="c-basic" type="number" value="0"></label>
+        <label>Premium<input id="c-premium" type="number" value="0"></label>
+      </div>
+      <button class="btn btn-gold">জেনারেট</button>
+    </div>
+    <div class="ng-card"><h2>সব কুপন</h2><div id="coupons"></div></div>
+  </section>
+
+  <section id="view-bots" class="view hidden"><div class="ng-card"><h2>বট অ্যাকাউন্ট</h2><div id="bots"></div></div></section>
+
+  <section id="view-clan" class="view hidden">
+    <div class="ng-card">
+      <h2>সব বটকে ক্ল্যানে জয়েন করাও</h2>
+      <div class="row"><input id="join-clan-id" placeholder="Clan ID"><button class="btn btn-gold">জয়েন</button></div>
+      <div id="join-result" class="log"></div>
+    </div>
+  </section>
+
+  <section id="view-cfg" class="view hidden">
+    <div class="ng-card">
+      <h2>সেটিংস</h2>
+      <label>Basic credit USD<input id="s-basic" type="number" step="0.01"></label>
+      <label>Premium credit USD<input id="s-premium" type="number" step="0.01"></label>
+      <label>Binance Pay ID<input id="s-binance"></label>
+      <label>Discord<input id="s-discord"></label>
+      <label>Telegram<input id="s-telegram"></label>
+      <button class="btn btn-gold w-full">সেভ</button>
+    </div>
+  </section>
+
+  <section id="view-logs" class="view hidden"><div class="ng-card"><h2>লাইভ লগ</h2><div id="logs" class="log"></div></div></section>
+</main>
+
+
+
+
